@@ -1,0 +1,27 @@
+{
+  "name": "mmm-mqtt-notify",
+  "version": "1.0.0",
+  "description": "MQTT Module for MagicMirror to emit MM notifications",
+  "main": "MMM-MQTT-Notify.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sebastianhodapp/MMM-indoortemp.git"
+  },
+  "keywords": [
+    "MagicMirror",
+    "MQTT",
+    "NOTIFY"
+  ],
+  "author": "Sebastian Hodapp",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sebastianhodapp/MMM-indoortemp/issues"
+  },
+  "homepage": "https://github.com/sebastianhodapp/MMM-indoortemp#readme",
+  "dependencies": {
+    "mqtt": "^1.10.0"
+  }
+}
