@@ -11,30 +11,41 @@ Module.register("MMM-MQTT-Notify", {
     },
 
     start: function () {
-        console.log(this.name + ' started.');
-        this.subscriptions = [];
+        Log.log(this.name + ' started.');
+        this.subscriptions = new Map();
 
-        console.log(this.name + ': Setting up connection to ' + this.config.mqttServers.length + ' servers');
+        Log.log(this.name + ': Setting up connection to ' + this.config.mqttServers.length + ' servers');
 
         for (i = 0; i < this.config.mqttServers.length; i++) {
-            var s = this.config.mqttServers[i];
-            var serverKey = this.makeServerKey(s);
-            console.log(this.name + ': Adding config for ' + s.address + ' port ' + s.port + ' user ' + s.user);
+            let s = this.config.mqttServers[i];
+            let serverKey = this.makeServerKey(s);
+            Log.log(this.name + ': Adding config for ' + s.address + ' port ' + s.port + ' user ' + s.user);
             for (j = 0; j < s.subscriptions.length; j++) {
-                var sub = s.subscriptions[j];
-                this.subscriptions.push({
+                let sub = s.subscriptions[j];
+                let handler = sub.handler;
+                if (handler === undefined) {
+                    handler = this.defaultHandler;
+                }
+                Log.log(serverKey + '$$' + sub.topic);
+                Log.log(handler);
+                this.subscriptions.set(serverKey + '$$' + sub.topic, {
                     serverKey: serverKey,
                     notification_label: sub.notification_label,
                     topic: sub.topic,
+                    handler: handler,
                 });
             }
         }
-
+        Log.log('ALL SUBSCRIPTIONS')
         this.openMqttConnection();
-        var self = this;
+        const self = this;
         setInterval(function () {
             self.updateDom(1000);
         }, 5000);
+    },
+
+    defaultHandler: function (object, notification_label, value) {
+        object.sendNotification(notification_label, value);
     },
 
     openMqttConnection: function () {
@@ -44,14 +55,13 @@ Module.register("MMM-MQTT-Notify", {
     socketNotificationReceived: function (notification, payload) {
         if (notification === 'MQTT_PAYLOAD') {
             if (payload != null) {
-                for (i = 0; i < this.subscriptions.length; i++) {
-                    sub = this.subscriptions[i];
-                    if (sub.serverKey === payload.serverKey && sub.topic === payload.topic) {
-                        sub.value = payload.value;
-                        sub.time = payload.time;
-                        this.sendNotification(sub.notification_label, sub.value);
-                        Log.log(this.name + ': MQTT_PAYLOAD - ' + payload.topic + ' ' + payload.value);
-                    }
+                Log.log(this.name + ': MQTT_PAYLOAD - ' + payload.topic + ' ' + payload.value);
+                const handler_key = payload.serverKey + '$$' + payload.topic
+                if (this.subscriptions.has(handler_key)) {
+                    let sub = this.subscriptions.get(handler_key);
+                    sub.value = payload.value;
+                    sub.time = payload.time;
+                    sub.handler(this, sub.notification_label, sub.value);
                 }
 
                 if (self.config.debug) {
@@ -64,36 +74,35 @@ Module.register("MMM-MQTT-Notify", {
     },
 
     getDom: function () {
+        const wrapper = document.createElement("table");
 
-        self = this;
-        var wrapper = document.createElement("table");
-
-        if (!self.config.debug)
-            return wrapper;
-
-        var first = true;
-
-        if (self.subscriptions.length === 0) {
-            wrapper.innerHTML = (self.loaded) ? self.translate("EMPTY") : self.translate("LOADING");
-            console.log(self.name + ': No values');
+        if (!this.config.debug) {
             return wrapper;
         }
 
-        self.subscriptions.forEach(function (sub) {
-            var subWrapper = document.createElement("tr");
+        // var first = true;
+
+        if (this.subscriptions.length === 0) {
+            wrapper.innerHTML = (this.loaded) ? this.translate("EMPTY") : this.translate("LOADING");
+            console.log(this.name + ': No values');
+            return wrapper;
+        }
+
+        this.subscriptions.forEach(function (sub) {
+            let subWrapper = document.createElement("tr");
 
             // topic
-            var topicWrapper = document.createElement("td");
+            let topicWrapper = document.createElement("td");
             topicWrapper.innerHTML = sub.topic;
             subWrapper.appendChild(topicWrapper);
 
             // payload
-            var payloadWrapper = document.createElement("td");
+            let payloadWrapper = document.createElement("td");
             payloadWrapper.innerHTML = sub.value;
             subWrapper.appendChild(payloadWrapper);
 
             // notification label
-            var notifyWrapper = document.createElement("td");
+            let notifyWrapper = document.createElement("td");
             notifyWrapper.innerHTML = sub.notification_label;
             subWrapper.appendChild(notifyWrapper);
 
