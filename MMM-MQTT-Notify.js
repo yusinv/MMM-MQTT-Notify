@@ -45,7 +45,7 @@ Module.register("MMM-MQTT-Notify", {
     },
 
     defaultHandler: function (object, notification_label, value) {
-        object.sendNotification(notification_label, value);
+        object.sendNotification(notification_label, new TextDecoder().decode(value));
     },
 
     openMqttConnection: function () {
@@ -55,7 +55,7 @@ Module.register("MMM-MQTT-Notify", {
     socketNotificationReceived: function (notification, payload) {
         if (notification === 'MQTT_PAYLOAD') {
             if (payload != null) {
-                Log.log(this.name + ': MQTT_PAYLOAD - ' + payload.topic + ' ' + payload.value);
+                Log.log(this.name + ': MQTT_PAYLOAD - ' + payload.topic + ' ' + payload.value.constructor.name);
                 const handler_key = payload.serverKey + '$$' + payload.topic
                 if (this.subscriptions.has(handler_key)) {
                     let sub = this.subscriptions.get(handler_key);

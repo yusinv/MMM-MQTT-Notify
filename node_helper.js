@@ -79,7 +79,7 @@ module.exports = NodeHelper.create({
             self.sendSocketNotification('MQTT_PAYLOAD', {
                 serverKey: server.serverKey,
                 topic: topic,
-                value: payload.toString(),
+                value: payload,
                 time: Date.now()
             });
         });
